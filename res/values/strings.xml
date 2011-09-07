@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">Remote Gallery</string>
+	
+	<!-- Main -->
+	<string name="server_list_empty">There are no servers configured yet.\n\nTap the \"+\" button on top to configure one.</string>
+	<string name="add_server">Add server</string>
+	<string name="test_connection">Test connection</string>
+	<string name="edit_server">Edit server</string>
+	<string name="calculate_cache_size">Calculate cache size</string>
+	<string name="clear_cache">Clear cache</string>
+	<string name="delete_server">Delete server</string>
+	<string name="cache_size">Cache size</string>
+	<string name="cache_size_body">Files: %1$d\nDirs: %2$d\nSize: %3$s</string>
+	<string name="clearing_cache">Clearing cache...</string>
+	<string name="cache_cleared">Cache cleared</string>
+	
+	<!-- Remote Browser -->
+	<string name="filter">Filter</string>
+	<string name="refresh">Refresh</string>
+	<string name="directory_refreshed">Directory refreshed</string>
+	<string name="share_image">Share image</string>
+	
+	<!-- Preferences -->
+	<string name="preferences">Preferences</string>
+	<string name="remote_browser">Remote Browser</string>
+	<string name="reverse_dirs">Reverse dirs</string>
+	<string name="reverse_dirs_summary">Sort directories in reverse</string>
+	<string name="download_threads">Download threads</string>
+	<string name="application">Application</string>
+	<string name="configuration_help">Configuration help</string>
+	<string name="configuration_help_summary">Opens an external web page</string>
+	
+	<!-- Configure Server -->
+	<string name="server_configuration">Server Configuration</string>
+	<string name="profile_name">Profile name (optional)</string>
+	<string name="server_address">Server address</string>
+	<string name="port">Port</string>
+	<string name="username">Username</string>
+	<string name="path_to_private_key">Path to private key</string>
+	<string name="browse">Browse...</string>
+	<string name="remote_path_to_pictures_folder">Remote path to pictures folder</string>
+	<string name="save">Save</string>
+	
+	<!-- Connection Test -->
+	<string name="connection_test">Connection Test</string>
+	
+</resources>

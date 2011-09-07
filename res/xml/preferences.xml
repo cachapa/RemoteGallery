@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout="@layout/preferences">
+	
+	<PreferenceCategory android:title="@string/remote_browser"
+		android:key="remoteBrowserCategory">
+		
+		<CheckBoxPreference android:defaultValue="true"
+			android:title="@string/reverse_dirs"
+			android:summary="@string/reverse_dirs_summary"
+			android:key="reverseDirOrderPreference" />
+		
+		<EditTextPreference android:key="numberOfThreadsPreference"
+			android:defaultValue="6" android:title="@string/download_threads"
+			android:inputType="number"></EditTextPreference>
+	
+	</PreferenceCategory>
+
+	<PreferenceCategory android:title="@string/application"
+		android:key="applicationCategory">
+		
+		<Preference android:key="serverConfigurationPreference"
+			android:title="@string/configuration_help"
+			android:summary="@string/configuration_help_summary" />
+	
+	</PreferenceCategory>
+
+</PreferenceScreen>

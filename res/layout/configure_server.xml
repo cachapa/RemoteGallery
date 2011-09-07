@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical" android:layout_width="match_parent"
+	android:layout_height="match_parent">
+
+	<include layout="@layout/action_bar_simple" />
+	
+	<ScrollView android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_weight="1">
+		
+		<LinearLayout android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:orientation="vertical">
+			
+			<TextView android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="@string/profile_name"
+				android:textColor="?android:attr/textColorPrimary"
+				android:textAppearance="?android:attr/textAppearanceSmall" />
+				
+			<EditText android:id="@+id/name"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:singleLine="true"
+				android:inputType="textCapWords">
+					<requestFocus />
+			</EditText>
+			
+			<TableLayout android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:stretchColumns="0">
+				
+				<TableRow android:layout_width="wrap_content"
+					android:layout_height="wrap_content">
+					
+					<TextView android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="@string/server_address"
+						android:textColor="?android:attr/textColorPrimary"
+						android:textAppearance="?android:attr/textAppearanceSmall" />
+						
+					<TextView android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="@string/port"
+						android:textColor="?android:attr/textColorPrimary"
+						android:textAppearance="?android:attr/textAppearanceSmall" />
+						
+				</TableRow>
+				
+				<TableRow android:layout_width="fill_parent"
+					android:layout_height="wrap_content">
+					
+					<EditText android:id="@+id/address"
+						android:layout_width="fill_parent"
+						android:layout_height="wrap_content"
+						android:singleLine="true"
+						android:inputType="textNoSuggestions" />
+						
+					<EditText android:id="@+id/port"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="22"
+						android:width="60dp"
+						android:inputType="number"
+						android:singleLine="true" />
+						
+				</TableRow>
+				
+			</TableLayout>
+			
+			<TextView android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="@string/username"
+				android:textColor="?android:attr/textColorPrimary"
+				android:textAppearance="?android:attr/textAppearanceSmall" />
+				
+			<EditText android:id="@+id/username"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:singleLine="true"
+				android:inputType="textNoSuggestions" />
+				
+			<TableLayout android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:stretchColumns="0">
+				
+				<TableRow android:layout_width="wrap_content"
+					android:layout_height="wrap_content">
+					
+					<TextView android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="@string/path_to_private_key"
+						android:textColor="?android:attr/textColorPrimary"
+						android:textAppearance="?android:attr/textAppearanceSmall" />
+						
+				</TableRow>
+				
+				<TableRow android:layout_width="wrap_content"
+					android:layout_height="wrap_content">
+					
+					<EditText android:id="@+id/keyPath"
+						android:layout_width="match_parent"
+						android:layout_height="wrap_content"
+						android:singleLine="true"
+						android:inputType="textNoSuggestions" />
+						
+					<Button android:id="@+id/browse"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="@string/browse"
+						android:onClick="onClick" />
+				
+				</TableRow>
+				
+			</TableLayout>
+			
+			<TextView android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="@string/remote_path_to_pictures_folder"
+				android:textColor="?android:attr/textColorPrimary"
+				android:textAppearance="?android:attr/textAppearanceSmall" />
+				
+			<EditText android:id="@+id/remotePath"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:text="/"
+				android:singleLine="true"
+				android:inputType="textNoSuggestions" />
+				
+		</LinearLayout>
+		
+	</ScrollView>
+	
+	<LinearLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:orientation="horizontal"
+		style="@android:style/ButtonBar">
+
+		<Button android:layout_width="0dip"
+			android:layout_height="wrap_content"
+			android:text="@string/save"
+			android:id="@+id/SaveButton"
+			android:layout_weight="1"
+			android:onClick="onClick"
+			android:enabled="false" />
+		
+		<Button android:layout_width="0dip"
+			android:layout_height="wrap_content"
+			android:text="@android:string/cancel"
+			android:id="@+id/CancelButton"
+			android:layout_weight="1"
+			android:onClick="onClick" />
+		
+	</LinearLayout>
+
+</LinearLayout>

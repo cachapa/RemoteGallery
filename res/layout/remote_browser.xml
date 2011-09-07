@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res/net.cachapa.remotegallery"
+	android:orientation="vertical"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent">
+	
+	<include layout="@layout/action_bar_remote_browser"/>
+	
+	<FrameLayout android:layout_width="fill_parent"
+		android:layout_height="0dip" android:layout_weight="1">
+	
+	<ListView android:id="@android:id/list"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:drawSelectorOnTop="false"
+		android:fastScrollEnabled="true" android:textFilterEnabled="true"/>
+		
+	</FrameLayout>
+	
+</LinearLayout>

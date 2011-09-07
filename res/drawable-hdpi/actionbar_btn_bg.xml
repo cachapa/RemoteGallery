@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--	Copyright 2008-2010 Daniel Cachapa <cachapa@gmail.com>		-->
+
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:drawable="@drawable/actionbar_btn_bg_pressed"
+        android:state_focused="true"
+        android:state_pressed="true" />
+    <item android:drawable="@drawable/actionbar_btn_bg_pressed"
+        android:state_focused="false"
+        android:state_pressed="true" />
+    <item android:drawable="@drawable/actionbar_btn_bg_selected" android:state_focused="true" />
+    <item android:drawable="@android:color/transparent"
+        android:state_focused="false"
+        android:state_pressed="false" />
+	
+</selector>

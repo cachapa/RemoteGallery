@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--	Copyright 2008-2010 Daniel Cachapa <cachapa@gmail.com>		-->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:orientation="horizontal"
+	android:gravity="center_vertical"
+	android:background="@drawable/actionbar_background">
+	
+	<!--	Title	-->
+	<ImageButton android:id="@+id/homeButton"
+		android:layout_width="45dp"
+		android:layout_height="45dp"
+		android:padding="4dp"
+		android:scaleType="fitCenter"
+		android:src="@drawable/icon"
+		android:background="@drawable/actionbar_btn_bg"
+		android:onClick="onClick"/>
+		
+	<ImageView
+		android:layout_width="2px"
+		android:layout_height="fill_parent"
+		android:scaleType="fitXY"
+		android:src="@drawable/actionbar_separator" />
+	
+	<TextView android:id="@+id/titleTextView"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		style="@style/TextAppearance.Title" />
+	
+	<!--	Menu	-->
+	<ImageView android:layout_width="2px"
+		android:layout_height="fill_parent"
+		android:scaleType="fitXY"
+		android:src="@drawable/actionbar_separator" />
+	
+	<ImageButton android:id="@+id/filterButton"
+		android:layout_width="45dp"
+		android:layout_height="45dp"
+		android:padding="4dp"
+		android:scaleType="center"
+		android:onClick="onClick"
+		android:src="@drawable/ic_title_filter"
+		android:background="@drawable/actionbar_btn_bg" />
+	
+	<ImageView
+		android:layout_width="2px"
+		android:layout_height="fill_parent"
+		android:scaleType="fitXY"
+		android:src="@drawable/actionbar_separator" />
+	
+	<ImageButton android:id="@+id/refreshButton"
+		android:layout_width="45dp"
+		android:layout_height="45dp"
+		android:padding="4dp"
+		android:scaleType="center"
+		android:onClick="onClick"
+		android:src="@drawable/ic_title_refresh"
+		android:background="@drawable/actionbar_btn_bg" />
+		
+	<ImageView android:id="@+id/progressBar"
+		android:layout_width="45dp"
+		android:layout_height="45dp"
+		android:padding="4dp"
+		android:scaleType="center"
+		android:src="@drawable/ic_title_refresh"
+		android:visibility="gone" />
+		
+</LinearLayout>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+	<item android:id="@+id/menuTest"
+		android:title="@string/test_connection" />
+		
+	<item android:id="@+id/menuEdit"
+		android:title="@string/edit_server" />
+		
+	<item android:id="@+id/menuCacheSize"
+		android:title="@string/calculate_cache_size" />
+		
+	<item android:id="@+id/menuClearCache"
+		android:title="@string/clear_cache" />
+	
+	<item android:id="@+id/menuDelete"
+		android:title="@string/delete_server" />
+		
+</menu>
