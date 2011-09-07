@@ -7,7 +7,3 @@ Even if I knew on which album the picture was, there was no way to find it witho
 Remote Gallery saves bandwidth and speeds up the download by reducing the size of the images on the server prior to being sent. The images are saved locally on the device, displayed as thumbnails, and are made available to other apps on the device.
 
 Remote Gallery requires a functional server component. Configuration instructions can be found at: http://cachapa.net/?page_id=429
-
-If you'd like to contribute to Remote Gallery, please contact me.
-
-An overview of how the app works is given here: http://code.google.com/p/remotegallery/wiki/HowRemoteGalleryWorks
