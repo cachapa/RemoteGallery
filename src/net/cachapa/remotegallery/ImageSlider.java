@@ -18,6 +18,8 @@ import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 
 public class ImageSlider extends FragmentActivity implements OnPageChangeListener, onDownloadListener {
+	private static final int PAGE_MARGIN = 20;
+	
 	private String[] imagePaths;
 	private ViewPager viewPager;
 	private DownloadNotifier downloadNotifier;
@@ -39,6 +41,7 @@ public class ImageSlider extends FragmentActivity implements OnPageChangeListene
 		viewPager.setAdapter(sliderAdapter);
 		viewPager.setOnPageChangeListener(this);
 		viewPager.setCurrentItem(index);
+		viewPager.setPageMargin((int) (PAGE_MARGIN * getResources().getDisplayMetrics().density));
 		
 		// Register a menu for the long press
 		registerForContextMenu(viewPager);
