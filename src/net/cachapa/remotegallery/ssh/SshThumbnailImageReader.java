@@ -10,34 +10,24 @@ import net.cachapa.remotegallery.util.AppPreferences;
 import net.cachapa.remotegallery.util.ServerConf;
 import net.cachapa.remotegallery.util.Util;
 import android.content.Context;
-import android.util.DisplayMetrics;
 
-public class SshImageReader extends Ssh {
+public class SshThumbnailImageReader extends Ssh {
 	private String path;
 
-	public SshImageReader(Context context, ServerConf serverConf) {
+	public SshThumbnailImageReader(Context context, ServerConf serverConf) {
 		super(context, serverConf);
 	}
 	
 	public void getImage(String path, LogCallback logCallback) {
 		this.path = path;
-		DisplayMetrics dm = context.getResources().getDisplayMetrics();
-		int size = Math.max(dm.widthPixels, dm.heightPixels);
-		
-		String remoteCommand = "convert" +
-			" '" + serverConf.remotePath + path + "'" +
-			" -resize " + size +
-			" -quality 90" +
-			" -auto-orient" +
-			" -";
-		
+		String remoteCommand = "jhead -st - '" + serverConf.remotePath + path + "'";
 		execute(remoteCommand, logCallback);
 	}
 	
 	@Override
 	public void getDataStream(InputStream inputStream) throws IOException {
 		String imagePath = AppPreferences.getCacheDir(serverConf) + path;
-		File outputFile = new File(imagePath + ".temp");
+		File outputFile = new File(imagePath + ".tn.temp");
 		// Create the directory
 		File parent = new File(outputFile.getParent());
 		parent.mkdirs();
@@ -52,24 +42,22 @@ public class SshImageReader extends Ssh {
 		output.close();
 		
 		if (outputFile.length() > 0) {
-			// Generate the thumbnail if we don't have one
+			// Generate the thumbnail
 			String thumbnailPath = AppPreferences.getThumbnailDir(serverConf) + path;
-			if (!Util.isCached(thumbnailPath)) {
-			    int size = (int) (48 * context.getResources().getDisplayMetrics().density);
-
-			    // Create the thumbnails directory, and the .nomedia file, if necessary
-			    if (new File(new File(thumbnailPath).getParent()).mkdirs()) {
-			        File noMediaFile = new File(AppPreferences.getThumbnailDir(serverConf) + "/.nomedia");
-			        if (!noMediaFile.exists()) {
-			            noMediaFile.createNewFile();
-			        }
-			    }
-
-			    Util.generateThumbnail(imagePath + ".temp", thumbnailPath, size);
+			int size = (int) (48 * context.getResources().getDisplayMetrics().density);
+			
+			// Create the thumbnails directory, and the .nomedia file, if necessary
+			if (new File(new File(thumbnailPath).getParent()).mkdirs()) {
+				File noMediaFile = new File(AppPreferences.getThumbnailDir(serverConf) + "/.nomedia");
+				if (!noMediaFile.exists()) {
+					noMediaFile.createNewFile();
+				}
 			}
-
-			// Remove the .temp from the image filename
-			outputFile.renameTo(new File(imagePath));
+			
+			Util.generateThumbnail(imagePath + ".tn.temp", thumbnailPath, size);
+			
+			// Delete temp file
+			outputFile.delete();
 		}
 	}
 }
