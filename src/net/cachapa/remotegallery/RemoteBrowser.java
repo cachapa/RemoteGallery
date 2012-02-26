@@ -356,7 +356,8 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		for (int i = 0; i < size; i++) {
 			entry = (DirEntry) getListAdapter().getItem((i + firstPosition) % size);
 			path = currentPath + "/" + entry.name;
-			if (!entry.isDirectory && !entry.isThumbDownloading && !isThumbCached(entry)) {
+			if (!entry.isDirectory && !entry.alreadyDownloadedThumbOnce && !entry.isThumbDownloading && 
+			    !isThumbCached(entry)) {
 				new ImageThumbDownloader(entry).execute(path);
 				return;
 			}
@@ -364,7 +365,8 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		for (int i = 0; i < size; i++) {
 			entry = (DirEntry) getListAdapter().getItem((i + firstPosition) % size);
 			path = currentPath + "/" + entry.name;
-			if (!entry.isDirectory && !entry.isDownloading && !isCached(entry)) {
+			if (!entry.isDirectory && !entry.alreadyDownloadedOnce && !entry.isDownloading &&
+				!isCached(entry)) {
 				new ImageDownloader(entry).execute(path);
 				return;
 			}
@@ -481,6 +483,7 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		@Override
 		protected void onPreExecute() {
 			entry.isDownloading = true;
+			entry.alreadyDownloadedOnce = true;
 		}
 		
 		@Override
@@ -504,6 +507,7 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		@Override
 		protected void onPreExecute() {
 			entry.isThumbDownloading = true;
+			entry.alreadyDownloadedThumbOnce = true;
 		}
 
 		@Override
@@ -517,6 +521,13 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 			entry.isThumbDownloading = false;
 			downloadNotifier.notifyDownloadComplete();
 		}
+		
+		@Override
+		public void logError(Ssh ssh, String log) {
+			// Ignore no thumbnail errors
+			if (!log.toLowerCase().contains("image contains no thumbnail")) {
+				super.logError(ssh, log);
+			}
 	}
 
 	private class DirListAdapter extends BaseAdapter implements ListAdapter, Filterable {

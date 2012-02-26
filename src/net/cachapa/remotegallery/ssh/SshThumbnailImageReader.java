@@ -10,7 +10,6 @@ import net.cachapa.remotegallery.util.AppPreferences;
 import net.cachapa.remotegallery.util.ServerConf;
 import net.cachapa.remotegallery.util.Util;
 import android.content.Context;
-import android.util.DisplayMetrics;
 
 public class SshThumbnailImageReader extends Ssh {
 	private String path;
