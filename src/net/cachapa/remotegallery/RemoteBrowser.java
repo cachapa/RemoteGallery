@@ -94,13 +94,24 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		
 		// Register a menu for the long press
 		registerForContextMenu(getListView());
+
+		// We want to register for notifications when either:
+		//   (a) we're in the foreground (see onResume)
+		//   (b) there is an ImageSlider directly on top of us, but we're the topmost
+		//       RemoteBrowser underneath it (see onListItemClick).
+		downloadNotifier = DownloadNotifier.getInstance();
 	}
-	
+
+	@Override
+	protected void onDestroy() {
+		downloadNotifier.removeDownloadListener(this);
+		super.onDestroy();
+	}
+
 	@Override
 	protected void onResume() {
 		super.onResume();
-		downloadNotifier = DownloadNotifier.getInstance();
-		downloadNotifier.setOnDownloadListener(this);
+		downloadNotifier.addDownloadListener(this);
 		isDownloadActive = true;
 		if (getListAdapter() != null) {
 			getListAdapter().notifyDataSetChanged();
@@ -253,6 +264,8 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		DirEntry entry = (DirEntry) getListAdapter().getItem(position);
 		String path = currentPath + "/" + entry.name;
 		if (entry.isDirectory) {
+			// We're no longer the top most directory viewer - remove our listener
+			downloadNotifier.removeDownloadListener(this);
 			isDownloadActive = false;
 			Intent remoteBrowserIntent = new Intent(this, net.cachapa.remotegallery.RemoteBrowser.class);
 			remoteBrowserIntent.putExtra("path", path);

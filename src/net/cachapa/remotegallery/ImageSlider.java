@@ -45,15 +45,19 @@ public class ImageSlider extends FragmentActivity implements OnPageChangeListene
 		
 		// Register a menu for the long press
 		registerForContextMenu(viewPager);
-	}
-	
-	@Override
-	protected void onResume() {
-		super.onResume();
+
+		// Register for notification of downloads for the lifetime of this
+		// activity
 		downloadNotifier = DownloadNotifier.getInstance();
-		downloadNotifier.setOnDownloadListener(this);
+		downloadNotifier.addDownloadListener(this);
 	}
-	
+
+	@Override
+	protected void onDestroy() {
+		downloadNotifier.removeDownloadListener(this);
+		super.onDestroy();
+	}
+
 	/*** OnPageChangeListener ***/
 	@Override
 	public void onPageScrollStateChanged(int arg0) {
