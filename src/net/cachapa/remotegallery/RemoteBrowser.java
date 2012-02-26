@@ -353,20 +353,36 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		DirEntry entry;
 		String path;
 		int size = getListAdapter().getCount();
+		
+		// First try and get thumbnails
 		for (int i = 0; i < size; i++) {
 			entry = (DirEntry) getListAdapter().getItem((i + firstPosition) % size);
-			path = currentPath + "/" + entry.name;
-			if (!entry.isDirectory && !entry.alreadyDownloadedThumbOnce && !entry.isThumbDownloading && 
-			    !isThumbCached(entry)) {
+			if (entry.isDirectory || entry.isDownloading || entry.isThumbDownloading ||
+					isThumbCached(entry))
+				continue;
+
+			path = currentPath + "/" + entry.name;			
+			if (!entry.alreadyDownloadedThumbOnce) {
 				new ImageThumbDownloader(entry).execute(path);
 				return;
 			}
+			else if (!entry.alreadyDownloadedOnce) {
+				// Thumbnail fetch must have failed; prioritise a full fetch
+				// of this file
+				new ImageDownloader(entry).execute(path);
+				return;
+			}
 		}
+		
+		// Then try and get the full quality image
 		for (int i = 0; i < size; i++) {
 			entry = (DirEntry) getListAdapter().getItem((i + firstPosition) % size);
+			if (entry.isDirectory || entry.isDownloading || entry.isThumbDownloading ||
+					isCached(entry))
+				continue;
+			
 			path = currentPath + "/" + entry.name;
-			if (!entry.isDirectory && !entry.alreadyDownloadedOnce && !entry.isDownloading &&
-				!isCached(entry)) {
+			if (!entry.alreadyDownloadedOnce) {
 				new ImageDownloader(entry).execute(path);
 				return;
 			}
@@ -483,7 +499,6 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		@Override
 		protected void onPreExecute() {
 			entry.isDownloading = true;
-			entry.alreadyDownloadedOnce = true;
 		}
 		
 		@Override
@@ -495,6 +510,7 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		@Override
 		protected void onPostExecute(String result) {
 			entry.isDownloading = false;
+			entry.alreadyDownloadedOnce = true;			
 			downloadNotifier.notifyDownloadComplete();
 		}
 	}
@@ -507,7 +523,6 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		@Override
 		protected void onPreExecute() {
 			entry.isThumbDownloading = true;
-			entry.alreadyDownloadedThumbOnce = true;
 		}
 
 		@Override
@@ -519,6 +534,7 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		@Override
 		protected void onPostExecute(String result) {
 			entry.isThumbDownloading = false;
+			entry.alreadyDownloadedThumbOnce = true;			
 			downloadNotifier.notifyDownloadComplete();
 		}
 		
