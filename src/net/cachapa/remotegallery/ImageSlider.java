@@ -21,6 +21,7 @@ public class ImageSlider extends FragmentActivity implements OnPageChangeListene
 	private static final int PAGE_MARGIN = 20;
 	
 	private String[] imagePaths;
+	private String[] thumbnailPaths;	
 	private ViewPager viewPager;
 	private DownloadNotifier downloadNotifier;
 	private int currentPage = 0;
@@ -33,9 +34,10 @@ public class ImageSlider extends FragmentActivity implements OnPageChangeListene
 		Intent intent = getIntent();
 		int index = intent.getIntExtra("index", 0);
 		imagePaths = intent.getStringArrayExtra("paths");
+		thumbnailPaths =  intent.getStringArrayExtra("thumbPaths");
 		
 		ImageSliderAdapter sliderAdapter = new ImageSliderAdapter(getSupportFragmentManager());
-		sliderAdapter.setImagePaths(imagePaths);
+		sliderAdapter.setImagePaths(imagePaths, thumbnailPaths);
 		
 		viewPager = (ViewPager) findViewById(R.id.viewPager);
 		viewPager.setAdapter(sliderAdapter);

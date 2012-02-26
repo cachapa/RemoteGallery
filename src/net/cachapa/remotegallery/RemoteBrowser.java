@@ -306,9 +306,11 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		// Build a list of images
 		DirListAdapter dirListAdapter = getListAdapter();
 		ArrayList<String> entries = new ArrayList<String>();
+		ArrayList<String> thumbEntries = new ArrayList<String>();
 		for (DirEntry entry : dirListAdapter.getDirEntries()) {
 			if (!entry.isDirectory) {
 				entries.add(AppPreferences.getCacheDir(serverConf) + currentPath + "/" + entry.name);
+				thumbEntries.add(AppPreferences.getThumbnailDir(serverConf) + currentPath + "/" + entry.name);				
 			}
 			else {
 				position--;
@@ -317,9 +319,12 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		
 		Intent imageViewerIntent = new Intent(RemoteBrowser.this, net.cachapa.remotegallery.ImageSlider.class);
 		String[] entriesString = new String[entries.size()];
+		String[] thumbEntriesString = new String[entries.size()];
 		entriesString = entries.toArray(entriesString);
+		thumbEntriesString = thumbEntries.toArray(thumbEntriesString);
 		imageViewerIntent.putExtra("index", position);
 		imageViewerIntent.putExtra("paths", entriesString);
+		imageViewerIntent.putExtra("thumbPaths", thumbEntriesString);		
 		startActivity(imageViewerIntent);
 	}
 	
