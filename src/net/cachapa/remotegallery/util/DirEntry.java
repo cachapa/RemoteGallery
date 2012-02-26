@@ -4,6 +4,7 @@ public class DirEntry {
 	public String name;
 	public boolean isDirectory;
 	public boolean isDownloading = false;
+	public boolean isThumbDownloading = false;
 
 	public DirEntry(String name, boolean isDirectory) {
 		this.name = name;

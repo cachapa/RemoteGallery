@@ -8,6 +8,7 @@ import net.cachapa.remotegallery.ssh.LogCallback;
 import net.cachapa.remotegallery.ssh.Ssh;
 import net.cachapa.remotegallery.ssh.SshImageReader;
 import net.cachapa.remotegallery.ssh.SshOutputReader;
+import net.cachapa.remotegallery.ssh.SshThumbnailImageReader;
 import net.cachapa.remotegallery.util.AppPreferences;
 import net.cachapa.remotegallery.util.CacheDeleter;
 import net.cachapa.remotegallery.util.Database;
@@ -294,7 +295,13 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		File file = new File(path);
 		return file.exists();
 	}
-	
+
+	private boolean isThumbCached(DirEntry entry) {
+		String thumbnailPath = AppPreferences.getThumbnailDir(serverConf) + currentPath + "/" + entry.name;
+		File file = new File(thumbnailPath);
+		return file.exists();
+	}
+
 	private void showImage(int position, String path) {
 		// Build a list of images
 		DirListAdapter dirListAdapter = getListAdapter();
@@ -324,6 +331,9 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 			if (entry.isDownloading) {
 				runningThreads++;
 			}
+			if (entry.isThumbDownloading) {
+				runningThreads++;
+			}
 		}
 		
 		// We just start the necessary ammount of threads to get to the maximum
@@ -344,7 +354,15 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		String path;
 		int size = getListAdapter().getCount();
 		for (int i = 0; i < size; i++) {
-			entry = (DirEntry)getListAdapter().getItem((i + firstPosition) % size);
+			entry = (DirEntry) getListAdapter().getItem((i + firstPosition) % size);
+			path = currentPath + "/" + entry.name;
+			if (!entry.isDirectory && !entry.isThumbDownloading && !isThumbCached(entry)) {
+				new ImageThumbDownloader(entry).execute(path);
+				return;
+			}
+		}
+		for (int i = 0; i < size; i++) {
+			entry = (DirEntry) getListAdapter().getItem((i + firstPosition) % size);
 			path = currentPath + "/" + entry.name;
 			if (!entry.isDirectory && !entry.isDownloading && !isCached(entry)) {
 				new ImageDownloader(entry).execute(path);
@@ -424,13 +442,42 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 			}
 		}
 	}
-	
-	private class ImageDownloader extends AsyncTask<String, String, String> implements LogCallback {
-		private DirEntry entry;
-		public ImageDownloader(DirEntry entry) {
+
+	private abstract class GenericImageDownloader extends AsyncTask<String, String, String> implements LogCallback {
+		protected DirEntry entry;
+
+		public GenericImageDownloader(DirEntry entry) {
 			this.entry = entry;
 		}
-		
+
+		@Override
+		protected void onProgressUpdate(String... values) {
+			if (hasWindowFocus()) {
+				Toast.makeText(RemoteBrowser.this, "Error: " + values[0], Toast.LENGTH_LONG).show();
+			}
+		}
+
+		@Override
+		public void log(Ssh ssh, String log) {
+			// Do nothing
+		}
+
+		@Override
+		public void logError(Ssh ssh, String log) {
+			// There are two messages sent to the error stream at every
+			// succesful connection.
+			// We ignore those.
+			if (!log.toLowerCase().contains("key accepted unconditionally") && !log.toLowerCase().contains("(fingerprint md5")) {
+				publishProgress(log);
+			}
+		}
+	}
+
+	private class ImageDownloader extends GenericImageDownloader {
+		public ImageDownloader(DirEntry entry) {
+			super(entry);
+		}
+
 		@Override
 		protected void onPreExecute() {
 			entry.isDownloading = true;
@@ -441,39 +488,37 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 			new SshImageReader(RemoteBrowser.this, serverConf).getImage(params[0], this);
 			return null;
 		}
-		
-		@Override
-		protected void onProgressUpdate(String... values) {
-			if (hasWindowFocus()) {
-				Toast.makeText(RemoteBrowser.this, "Error: " + values[0], Toast.LENGTH_LONG).show();
-			}
-		}
-		
+
 		@Override
 		protected void onPostExecute(String result) {
 			entry.isDownloading = false;
 			downloadNotifier.notifyDownloadComplete();
 		}
-		
-		@Override
-		public void log(Ssh ssh, String log) {
-			// Do nothing
+	}
+
+	private class ImageThumbDownloader extends GenericImageDownloader {
+		public ImageThumbDownloader(DirEntry entry) {
+			super(entry);
 		}
 
 		@Override
-		public void logError(Ssh ssh, String log) {
-			// There are two messages sent to the error stream at every succesful connection.
-			// We ignore those.
-			if (
-					!log.toLowerCase().contains("key accepted unconditionally") &&
-					!log.toLowerCase().contains("(fingerprint md5")
-			) {
-				publishProgress(log);
-			}
+		protected void onPreExecute() {
+			entry.isThumbDownloading = true;
+		}
+
+		@Override
+		protected String doInBackground(String... params) {
+			new SshThumbnailImageReader(RemoteBrowser.this, serverConf).getImage(params[0], this);
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(String result) {
+			entry.isThumbDownloading = false;
+			downloadNotifier.notifyDownloadComplete();
 		}
 	}
-	
-	
+
 	private class DirListAdapter extends BaseAdapter implements ListAdapter, Filterable {
 		private ArrayList<DirEntry> dirEntries, preFilteredEntries;
 		
@@ -537,14 +582,12 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 				}
 			}
 			else {
-				if (isCached(entry)) {
+				if (isThumbCached(entry)) {
 					holder.thumbnailView.setImageBitmap(BitmapFactory.decodeFile(AppPreferences.getThumbnailDir(serverConf) + path));
-				}
-				else if (entry.isDownloading) {
+				} else if (entry.isDownloading || entry.isThumbDownloading) {
 					holder.thumbnailView.setVisibility(View.INVISIBLE);
 					holder.progressBar.setVisibility(View.VISIBLE);
-				}
-				else {
+				} else {
 					holder.thumbnailView.setImageResource(android.R.drawable.ic_menu_gallery);
 				}
 			}
@@ -558,7 +601,7 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 				@SuppressWarnings("unchecked")
 				@Override
 				protected void publishResults(CharSequence constraint, FilterResults results) {
-					dirEntries = (ArrayList<DirEntry>)results.values;
+					dirEntries = (ArrayList<DirEntry>) results.values;
 					notifyDataSetChanged();
 				}
 				
