@@ -549,6 +549,7 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 			if (!log.toLowerCase().contains("image contains no thumbnail")) {
 				super.logError(ssh, log);
 			}
+		}
 	}
 
 	private class DirListAdapter extends BaseAdapter implements ListAdapter, Filterable {
