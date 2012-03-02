@@ -8,6 +8,7 @@ import net.cachapa.remotegallery.ssh.LogCallback;
 import net.cachapa.remotegallery.ssh.Ssh;
 import net.cachapa.remotegallery.ssh.SshImageReader;
 import net.cachapa.remotegallery.ssh.SshOutputReader;
+import net.cachapa.remotegallery.ssh.SshThumbnailImageReader;
 import net.cachapa.remotegallery.util.AppPreferences;
 import net.cachapa.remotegallery.util.CacheDeleter;
 import net.cachapa.remotegallery.util.Database;
@@ -94,13 +95,24 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		
 		// Register a menu for the long press
 		registerForContextMenu(getListView());
+
+		// We want to register for notifications when either:
+		//   (a) we're in the foreground (see onResume)
+		//   (b) there is an ImageSlider directly on top of us, but we're the topmost
+		//       RemoteBrowser underneath it (see onListItemClick).
+		downloadNotifier = DownloadNotifier.getInstance();
 	}
-	
+
+	@Override
+	protected void onDestroy() {
+		downloadNotifier.removeDownloadListener(this);
+		super.onDestroy();
+	}
+
 	@Override
 	protected void onResume() {
 		super.onResume();
-		downloadNotifier = DownloadNotifier.getInstance();
-		downloadNotifier.setOnDownloadListener(this);
+		downloadNotifier.addDownloadListener(this);
 		isDownloadActive = true;
 		if (getListAdapter() != null) {
 			getListAdapter().notifyDataSetChanged();
@@ -253,6 +265,8 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		DirEntry entry = (DirEntry) getListAdapter().getItem(position);
 		String path = currentPath + "/" + entry.name;
 		if (entry.isDirectory) {
+			// We're no longer the top most directory viewer - remove our listener
+			downloadNotifier.removeDownloadListener(this);
 			isDownloadActive = false;
 			Intent remoteBrowserIntent = new Intent(this, net.cachapa.remotegallery.RemoteBrowser.class);
 			remoteBrowserIntent.putExtra("path", path);
@@ -281,14 +295,22 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		File file = new File(path);
 		return file.exists();
 	}
-	
+
+	private boolean isThumbCached(DirEntry entry) {
+		String thumbnailPath = AppPreferences.getThumbnailDir(serverConf) + currentPath + "/" + entry.name;
+		File file = new File(thumbnailPath);
+		return file.exists();
+	}
+
 	private void showImage(int position, String path) {
 		// Build a list of images
 		DirListAdapter dirListAdapter = getListAdapter();
 		ArrayList<String> entries = new ArrayList<String>();
+		ArrayList<String> thumbEntries = new ArrayList<String>();
 		for (DirEntry entry : dirListAdapter.getDirEntries()) {
 			if (!entry.isDirectory) {
 				entries.add(AppPreferences.getCacheDir(serverConf) + currentPath + "/" + entry.name);
+				thumbEntries.add(AppPreferences.getThumbnailDir(serverConf) + currentPath + "/" + entry.name);				
 			}
 			else {
 				position--;
@@ -297,9 +319,12 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		
 		Intent imageViewerIntent = new Intent(RemoteBrowser.this, net.cachapa.remotegallery.ImageSlider.class);
 		String[] entriesString = new String[entries.size()];
+		String[] thumbEntriesString = new String[entries.size()];
 		entriesString = entries.toArray(entriesString);
+		thumbEntriesString = thumbEntries.toArray(thumbEntriesString);
 		imageViewerIntent.putExtra("index", position);
 		imageViewerIntent.putExtra("paths", entriesString);
+		imageViewerIntent.putExtra("thumbPaths", thumbEntriesString);		
 		startActivity(imageViewerIntent);
 	}
 	
@@ -309,6 +334,9 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		ArrayList<DirEntry> entries = getListAdapter().getDirEntries();
 		for (DirEntry entry : entries) {
 			if (entry.isDownloading) {
+				runningThreads++;
+			}
+			if (entry.isThumbDownloading) {
 				runningThreads++;
 			}
 		}
@@ -330,10 +358,36 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 		DirEntry entry;
 		String path;
 		int size = getListAdapter().getCount();
+		
+		// First try and get thumbnails
 		for (int i = 0; i < size; i++) {
-			entry = (DirEntry)getListAdapter().getItem((i + firstPosition) % size);
+			entry = (DirEntry) getListAdapter().getItem((i + firstPosition) % size);
+			if (entry.isDirectory || entry.isDownloading || entry.isThumbDownloading ||
+					isThumbCached(entry))
+				continue;
+
+			path = currentPath + "/" + entry.name;			
+			if (!entry.alreadyDownloadedThumbOnce) {
+				new ImageThumbDownloader(entry).execute(path);
+				return;
+			}
+			else if (!entry.alreadyDownloadedOnce) {
+				// Thumbnail fetch must have failed; prioritise a full fetch
+				// of this file
+				new ImageDownloader(entry).execute(path);
+				return;
+			}
+		}
+		
+		// Then try and get the full quality image
+		for (int i = 0; i < size; i++) {
+			entry = (DirEntry) getListAdapter().getItem((i + firstPosition) % size);
+			if (entry.isDirectory || entry.isDownloading || entry.isThumbDownloading ||
+					isCached(entry))
+				continue;
+			
 			path = currentPath + "/" + entry.name;
-			if (!entry.isDirectory && !entry.isDownloading && !isCached(entry)) {
+			if (!entry.alreadyDownloadedOnce) {
 				new ImageDownloader(entry).execute(path);
 				return;
 			}
@@ -411,13 +465,42 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 			}
 		}
 	}
-	
-	private class ImageDownloader extends AsyncTask<String, String, String> implements LogCallback {
-		private DirEntry entry;
-		public ImageDownloader(DirEntry entry) {
+
+	private abstract class GenericImageDownloader extends AsyncTask<String, String, String> implements LogCallback {
+		protected DirEntry entry;
+
+		public GenericImageDownloader(DirEntry entry) {
 			this.entry = entry;
 		}
-		
+
+		@Override
+		protected void onProgressUpdate(String... values) {
+			if (hasWindowFocus()) {
+				Toast.makeText(RemoteBrowser.this, "Error: " + values[0], Toast.LENGTH_LONG).show();
+			}
+		}
+
+		@Override
+		public void log(Ssh ssh, String log) {
+			// Do nothing
+		}
+
+		@Override
+		public void logError(Ssh ssh, String log) {
+			// There are two messages sent to the error stream at every
+			// succesful connection.
+			// We ignore those.
+			if (!log.toLowerCase().contains("key accepted unconditionally") && !log.toLowerCase().contains("(fingerprint md5")) {
+				publishProgress(log);
+			}
+		}
+	}
+
+	private class ImageDownloader extends GenericImageDownloader {
+		public ImageDownloader(DirEntry entry) {
+			super(entry);
+		}
+
 		@Override
 		protected void onPreExecute() {
 			entry.isDownloading = true;
@@ -428,39 +511,47 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 			new SshImageReader(RemoteBrowser.this, serverConf).getImage(params[0], this);
 			return null;
 		}
-		
-		@Override
-		protected void onProgressUpdate(String... values) {
-			if (hasWindowFocus()) {
-				Toast.makeText(RemoteBrowser.this, "Error: " + values[0], Toast.LENGTH_LONG).show();
-			}
-		}
-		
+
 		@Override
 		protected void onPostExecute(String result) {
 			entry.isDownloading = false;
+			entry.alreadyDownloadedOnce = true;			
+			downloadNotifier.notifyDownloadComplete();
+		}
+	}
+
+	private class ImageThumbDownloader extends GenericImageDownloader {
+		public ImageThumbDownloader(DirEntry entry) {
+			super(entry);
+		}
+
+		@Override
+		protected void onPreExecute() {
+			entry.isThumbDownloading = true;
+		}
+
+		@Override
+		protected String doInBackground(String... params) {
+			new SshThumbnailImageReader(RemoteBrowser.this, serverConf).getImage(params[0], this);
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(String result) {
+			entry.isThumbDownloading = false;
+			entry.alreadyDownloadedThumbOnce = true;			
 			downloadNotifier.notifyDownloadComplete();
 		}
 		
 		@Override
-		public void log(Ssh ssh, String log) {
-			// Do nothing
-		}
-
-		@Override
 		public void logError(Ssh ssh, String log) {
-			// There are two messages sent to the error stream at every succesful connection.
-			// We ignore those.
-			if (
-					!log.toLowerCase().contains("key accepted unconditionally") &&
-					!log.toLowerCase().contains("(fingerprint md5")
-			) {
-				publishProgress(log);
+			// Ignore no thumbnail errors
+			if (!log.toLowerCase().contains("image contains no thumbnail")) {
+				super.logError(ssh, log);
 			}
 		}
 	}
-	
-	
+
 	private class DirListAdapter extends BaseAdapter implements ListAdapter, Filterable {
 		private ArrayList<DirEntry> dirEntries, preFilteredEntries;
 		
@@ -524,14 +615,12 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 				}
 			}
 			else {
-				if (isCached(entry)) {
+				if (isThumbCached(entry)) {
 					holder.thumbnailView.setImageBitmap(BitmapFactory.decodeFile(AppPreferences.getThumbnailDir(serverConf) + path));
-				}
-				else if (entry.isDownloading) {
+				} else if (entry.isDownloading || entry.isThumbDownloading) {
 					holder.thumbnailView.setVisibility(View.INVISIBLE);
 					holder.progressBar.setVisibility(View.VISIBLE);
-				}
-				else {
+				} else {
 					holder.thumbnailView.setImageResource(android.R.drawable.ic_menu_gallery);
 				}
 			}
@@ -545,7 +634,7 @@ public class RemoteBrowser extends ListActivity implements OnClickListener, OnGl
 				@SuppressWarnings("unchecked")
 				@Override
 				protected void publishResults(CharSequence constraint, FilterResults results) {
-					dirEntries = (ArrayList<DirEntry>)results.values;
+					dirEntries = (ArrayList<DirEntry>) results.values;
 					notifyDataSetChanged();
 				}
 				

@@ -21,6 +21,7 @@ public class ImageSlider extends FragmentActivity implements OnPageChangeListene
 	private static final int PAGE_MARGIN = 20;
 	
 	private String[] imagePaths;
+	private String[] thumbnailPaths;	
 	private ViewPager viewPager;
 	private DownloadNotifier downloadNotifier;
 	private int currentPage = 0;
@@ -33,9 +34,10 @@ public class ImageSlider extends FragmentActivity implements OnPageChangeListene
 		Intent intent = getIntent();
 		int index = intent.getIntExtra("index", 0);
 		imagePaths = intent.getStringArrayExtra("paths");
+		thumbnailPaths =  intent.getStringArrayExtra("thumbPaths");
 		
 		ImageSliderAdapter sliderAdapter = new ImageSliderAdapter(getSupportFragmentManager());
-		sliderAdapter.setImagePaths(imagePaths);
+		sliderAdapter.setImagePaths(imagePaths, thumbnailPaths);
 		
 		viewPager = (ViewPager) findViewById(R.id.viewPager);
 		viewPager.setAdapter(sliderAdapter);
@@ -45,15 +47,19 @@ public class ImageSlider extends FragmentActivity implements OnPageChangeListene
 		
 		// Register a menu for the long press
 		registerForContextMenu(viewPager);
-	}
-	
-	@Override
-	protected void onResume() {
-		super.onResume();
+
+		// Register for notification of downloads for the lifetime of this
+		// activity
 		downloadNotifier = DownloadNotifier.getInstance();
-		downloadNotifier.setOnDownloadListener(this);
+		downloadNotifier.addDownloadListener(this);
 	}
-	
+
+	@Override
+	protected void onDestroy() {
+		downloadNotifier.removeDownloadListener(this);
+		super.onDestroy();
+	}
+
 	/*** OnPageChangeListener ***/
 	@Override
 	public void onPageScrollStateChanged(int arg0) {
