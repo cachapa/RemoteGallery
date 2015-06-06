@@ -112,7 +112,11 @@ public abstract class Ssh {
 							// It's too hard to pass the $HOME, and .ssh isn't necessary
 							// in any case, therefore, we simply ignore the warning.
 							if (!line.toLowerCase().contains("warning: failed creating")) {
-								publishProgress(line);
+								// Dropbear shows us the fingerprint md5 on every operation
+								// we simply ignore the warning.
+								if (!line.toLowerCase().contains("fingerprint md5")) {
+									publishProgress(line);
+								}
 							}
 						}
 					}
